@@ -8,17 +8,18 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
-
+'
 ' Selenium API
 '
 ' VBA API for Selenium WebDriver
 '
-'
 
+' Public Member 
 Public sessionId As String
 Public responseText As String
 Public responseStatus As String
 
+' Private Member
 Private XHR As Object
 Private WebDriverPath As String
 
@@ -32,8 +33,8 @@ End Sub
 
 ' Destructor
 Private Sub Class_Terminate()
-    'Close session
-    responseStatus = httpReq("DELETE", "http://localhost:9515/session/" & sessionId) 'delete session
+    'Delete session
+    responseStatus = httpReq("DELETE", "http://localhost:9515/session/" & sessionId)
     
     'Kill driver
     Dim WSH As Object, FSO As Object
@@ -53,8 +54,8 @@ Public Function Setup(Optional ByRef driverPath As String = "") As String
     Dim WSH As Object, FSO As Object
     Dim st As Boolean
     
-    'Check WebDriver running
-    On Error Resume Next
+    'Check WebDriver is running
+    On Error Resume Next 
     st = Status()
     On Error GoTo 0
     
@@ -110,7 +111,7 @@ Public Function GetAttribute(ByRef elementId As String, ByRef attributeName As S
 End Function
 
 
-'------ PRIVATE MEMBER ------
+'------ PRIVATE MEMBER ----------------------------------------------------------------------------
 Private Function getValueByKey(json As String, key As String) As String
     Dim RE As Object
     Set RE = CreateObject("VBScript.RegExp")
@@ -120,25 +121,15 @@ End Function
 
 
 Private Function httpReq(method As String, url As String, Optional data As String = "") As String
-     'On Error GoTo AFTER
+     'XHR may cause fatal error for not-found url etc.
      XHR.Open method, url, False
      XHR.SetRequestHeader "Content-Type", "application/json"
      XHR.Send data
      responseText = XHR.responseText
      responseStatus = XHR.Status
      httpReq = XHR.Status
-'AFTER:
-'     If Len(httpReq) <> 3 Then httpReq = 999 ' not foundなどでもエラーがでるので、エラーでもstatusを設定する。
-'     If Err.Number <> 0 Then
-'       Err.Raise Err.Number, Err.Source, Err.Description
-'     End If
-'     On Error GoTo 0
-'
-'     If Err.Number = -2146697211 Then '指定されたリソースが見つかりません
-'     End If
      
-     If httpReq < "400" Then
-     Else
+     If Len(httpReq) <> 3 Or httpReq >= "400" Then
        Err.Raise 10999, "httpReq", "HTTP Error. Response Status = " & httpReq
      End If
      Debug.Print responseText
