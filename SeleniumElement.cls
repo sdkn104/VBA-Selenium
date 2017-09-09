@@ -76,6 +76,12 @@ Public Function FindElements(ByRef by As String, ByRef value As String) As Varia
     FindElements = arr
 End Function
 
+' FIND BY TAG NAME
+Public Function FindElementByTagName(ByRef tagName As String) As SeleniumElement
+    Set FindElementByTagName = FindElement("tag name", tagName)
+End Function
+
+
 
 ' SEND KEYS
 Public Function SendKeys(ByRef keys As String) As String
@@ -103,6 +109,40 @@ End Function
 ' TEXT
 Public Function Text() As String
     Driver.responseStatus = Driver.httpReq("GET", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/text")
-    Text = Driver.getValueByKey(Driver.responseText, "value") '    TODO: unescape JSON String
+    Text = Driver.JsonGetValueByKey(Driver.responseText, "value") '    TODO: unescape JSON String
 End Function
 
+
+
+'Table to Array   LIMITATION: simple table only. No colspan, rowspan, etc.
+Public Function ToArray() As Variant
+    Dim rows As Variant, cols As Variant, arr As Variant
+    Dim rowCnt As Long, colCnt As Long
+    Dim r As Long, c As Long, t As Long
+    'Get rows
+    rows = FindElements("tag name", "tr")
+    If UBound(rows) < 0 Then Exit Function
+    rowCnt = UBound(rows) - LBound(rows) + 1
+    'Get column count (the max number of columns)
+    colCnt = 0
+    For r = LBound(rows) To UBound(rows)
+      cols = rows(r).FindElements("xpath", ".//td | .//th")
+      t = UBound(cols) - LBound(cols) + 1
+      If t > colCnt Then colCnt = t
+    Next
+    If colCnt = 0 Then Exit Function
+    'insert into array
+    Debug.Print "table: " & rowCnt & " x " & colCnt
+    ReDim arr(1 To rowCnt, 1 To colCnt)
+    For r = 1 To UBound(arr, 1)
+        cols = rows(r - 1 + LBound(rows)).FindElements("xpath", ".//td | .//th")
+        For c = 1 To UBound(arr, 2)
+            If c <= UBound(cols) - LBound(cols) + 1 Then
+              arr(r, c) = cols(c - LBound(cols) - 1).Text
+            Else
+              arr(r, c) = Null
+            End If
+        Next
+    Next
+    ToArray = arr
+End Function
