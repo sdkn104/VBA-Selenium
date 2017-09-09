@@ -21,6 +21,9 @@ Sub test()
     e.FindElement("id", "id_button").Click
     'e.FindElement("id", "id_submit").Submit
     
+    Debug.Print WebDriver.PageSource
+    Debug.Print WebDriver.FindElement("xpath", "/html/body/span").Text
+        
     tbls = WebDriver.FindElements("xpath", "//table")
     tbl1arr = tbls(1).ToArray
     'ActiveSheet.Range("A1").Resize(UBound(tbl1arr, 1), UBound(tbl1arr, 2)) = tbl1arr
