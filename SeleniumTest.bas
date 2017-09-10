@@ -28,6 +28,7 @@ Sub test()
     'ActiveSheet.Range("A1").Resize(UBound(tbl1arr, 1), UBound(tbl1arr, 2)) = tbl1arr
     
     Debug.Print WebDriver.FindElement("id", "id_text").GetAttribute("name")
+    Debug.Print WebDriver.FindElement("id", "id_text").GetAttribute("namex")
     Debug.Print WebDriver.Status
     Debug.Print Left(WebDriver.PageSource, 100)
     Debug.Print WebDriver.FindElement("xpath", "/html/body/span").Text

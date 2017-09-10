@@ -30,7 +30,7 @@ End Sub
 ' FIND
 Public Function FindElement(ByRef by As String, ByRef value As String) As SeleniumElement
     Dim Elem As SeleniumElement
-    Driver.responseStatus = Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/element", "{""using"":""" & by & """,""value"":""" & value & """}")
+    Call Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/element", "{""using"":""" & by & """,""value"":""" & value & """}")
     Set Elem = New SeleniumElement
     Elem.Setup Driver
     Elem.elementId = Driver.getValueByKey(Driver.responseText, "ELEMENT")
@@ -58,14 +58,23 @@ Public Function FindElementByClassName(ByRef className As String) As SeleniumEle
     Set FindElementByClassName = FindElement("class name", className)
 End Function
 
+' FIND BY TAG NAME
+Public Function FindElementByTagName(ByRef tagName As String) As SeleniumElement
+    Set FindElementByTagName = FindElement("tag name", tagName)
+End Function
+
 
 ' FIND ELEMENTS
 Public Function FindElements(ByRef by As String, ByRef value As String) As Variant
     Dim Elem As SeleniumElement
     Dim arr As Variant, i As Long, elems As Variant
-    Driver.responseStatus = Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/elements", "{""using"":""" & by & """,""value"":""" & value & """}")
+    Call Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/elements", "{""using"":""" & by & """,""value"":""" & value & """}")
     elems = Driver.getElementIds(Driver.responseText)
-    ReDim arr(LBound(elems) To UBound(elems))
+    If UBound(elems) >= LBound(elems) Then
+      ReDim arr(LBound(elems) To UBound(elems))
+    Else
+      arr = Split("", ",") 'empty String array
+    End If
     For i = LBound(elems) To UBound(elems)
       Set Elem = New SeleniumElement
       Elem.Setup Driver
@@ -76,39 +85,34 @@ Public Function FindElements(ByRef by As String, ByRef value As String) As Varia
     FindElements = arr
 End Function
 
-' FIND BY TAG NAME
-Public Function FindElementByTagName(ByRef tagName As String) As SeleniumElement
-    Set FindElementByTagName = FindElement("tag name", tagName)
-End Function
-
 
 
 ' SEND KEYS
 Public Function SendKeys(ByRef keys As String) As String
-    Driver.responseStatus = Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/value", "{""value"":[""" & keys & """]}")
+    Call Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/value", "{""value"":[""" & keys & """]}")
 End Function
 
 ' SUBMIT
 Public Function Submit() As String
-    Driver.responseStatus = Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/submit")
+    Call Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/submit")
 End Function
 
 ' CLICK
 Public Function Click() As String
-    Driver.responseStatus = Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/click")
+    Call Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/click")
 End Function
 
 
 ' ATTRIBUTE
-Public Function GetAttribute(ByRef attributeName As String) As String
-    Driver.responseStatus = Driver.httpReq("GET", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/attribute/" & attributeName)
-    GetAttribute = getValueByKey(Driver.responseText, "value")
+Public Function GetAttribute(ByRef attributeName As String) As Variant
+    Call Driver.httpReq("GET", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/attribute/" & attributeName)
+    GetAttribute = Driver.getValueByKey(Driver.responseText, "value")
     Debug.Print attributeName & " : " & GetAttribute
 End Function
 
 ' TEXT
 Public Function Text() As String
-    Driver.responseStatus = Driver.httpReq("GET", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/text")
+    Call Driver.httpReq("GET", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/text")
     Text = Driver.JsonGetValueByKey(Driver.responseText, "value") '    TODO: unescape JSON String
 End Function
 
@@ -116,7 +120,7 @@ End Function
 
 'Table to Array   LIMITATION: simple table only. No colspan, rowspan, etc.
 Public Function ToArray() As Variant
-    Dim rows As Variant, cols As Variant, arr As Variant
+    Dim rows As Variant, cols As Variant, arr As Variant, e As Variant
     Dim rowCnt As Long, colCnt As Long
     Dim r As Long, c As Long, t As Long
     'Get rows
@@ -139,6 +143,11 @@ Public Function ToArray() As Variant
         For c = 1 To UBound(arr, 2)
             If c <= UBound(cols) - LBound(cols) + 1 Then
               arr(r, c) = cols(c - LBound(cols) - 1).Text
+              If Trim(arr(r, c)) = "" Then
+                For Each e In cols(c - LBound(cols) - 1).FindElements("xpath", ".//*")
+                  arr(r, c) = arr(r, c) & "[" & e.GetAttribute("class") & "]"
+                Next
+              End If
             Else
               arr(r, c) = Null
             End If
