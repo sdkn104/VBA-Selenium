@@ -22,7 +22,7 @@ Sub test()
     'e.FindElement("id", "id_submit").Submit
     
     tbls = WebDriver.FindElements("xpath", "//table")
-    tbls = WebDriver.FindElement("xpath", "/html/body").FindElements("xpath", "//table")
+    tbls = WebDriver.FindElement("xpath", "/html/body").FindElements("xpath", ".//table")
     
     tbl1arr = tbls(1).ToArray
     'ActiveSheet.Range("A1").Resize(UBound(tbl1arr, 1), UBound(tbl1arr, 2)) = tbl1arr
@@ -30,6 +30,16 @@ Sub test()
     Debug.Print WebDriver.FindElement("id", "id_text").GetAttribute("name")
     Debug.Print WebDriver.FindElement("id", "id_text").GetAttribute("namex")
     Debug.Print WebDriver.Status
+    Debug.Print WebDriver.responseText
     Debug.Print Left(WebDriver.PageSource, 100)
     Debug.Print WebDriver.FindElement("xpath", "/html/body/span").Text
+    
+    Debug.Print WebDriver.JsonGetValueByKey("{""value"":{""k"":999}, ""key"":""v""}", "value")
+    Debug.Print WebDriver.JsonGetValueByKey("{""value"":{""k"":999}, ""key"":""v""}", "value99")
+    Debug.Print WebDriver.getValueByKey("{""value"":{""k"":999}, ""key"":""v""}", "value")
+    Debug.Print WebDriver.getValueByKey("{""value"":""k"", ""key"":""v""}", "value")
+    Debug.Print WebDriver.getValueByKey("{""value"":null, ""key"":""v""}", "value")
+    Debug.Print WebDriver.getValueByKey("{""value"":99999, ""key"":""v""}", "value")
+    
+    
 End Sub

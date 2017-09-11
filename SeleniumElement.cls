@@ -7,10 +7,16 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
+'
+' VBA API for Selenium WebDriver
+'
+
 Option Explicit
 
+' Members
 Private Driver As SeleniumDriver
 Public elementId As String
+
 
 ' Constructor
 Private Sub Class_Initialize()
@@ -22,12 +28,14 @@ Private Sub Class_Terminate()
    Set Driver = Nothing
 End Sub
 
+
+' Setup
 Public Sub Setup(ByRef WebDriver As SeleniumDriver)
   Set Driver = WebDriver
 End Sub
 
 
-' FIND
+' FIND ELEMENT
 Public Function FindElement(ByRef by As String, ByRef value As String) As SeleniumElement
     Dim Elem As SeleniumElement
     Call Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/element", "{""using"":""" & by & """,""value"":""" & value & """}")
@@ -88,6 +96,7 @@ End Function
 
 
 ' SEND KEYS
+'   TODO: how can we send control-char??
 Public Function SendKeys(ByRef keys As String) As String
     Call Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/value", "{""value"":[""" & keys & """]}")
 End Function
@@ -104,6 +113,7 @@ End Function
 
 
 ' ATTRIBUTE
+'  - return Null if the attributeName not found.
 Public Function GetAttribute(ByRef attributeName As String) As Variant
     Call Driver.httpReq("GET", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/attribute/" & attributeName)
     GetAttribute = Driver.getValueByKey(Driver.responseText, "value")
@@ -113,7 +123,7 @@ End Function
 ' TEXT
 Public Function Text() As String
     Call Driver.httpReq("GET", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/text")
-    Text = Driver.JsonGetValueByKey(Driver.responseText, "value") '    TODO: unescape JSON String
+    Text = Driver.JsonGetValueByKey(Driver.responseText, "value")
 End Function
 
 

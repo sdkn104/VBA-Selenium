@@ -7,11 +7,11 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'
-' Selenium API
+
 '
 ' VBA API for Selenium WebDriver
 '
+
 Option Explicit
 
 ' Public Member
@@ -51,8 +51,8 @@ Private Sub Class_Terminate()
 End Sub
 
 
-' Setup driver and session
-Public Function Setup(Optional ByRef driverPath As String = "") As String
+' Start driver and create session
+Public Function Setup(Optional ByRef driverPath As String = "", Optional browser As String = "chrome") As String
     Dim WSH As Object, FSO As Object
     Dim st As Boolean
     
@@ -78,19 +78,20 @@ Public Function Setup(Optional ByRef driverPath As String = "") As String
     End If
     
     'Get Selenium SessionId
-    Call httpReq("POST", "http://localhost:9515/session", "{""desiredCapabilities"":{""browser"":""chrome""}}")
+    Call httpReq("POST", "http://localhost:9515/session", "{""desiredCapabilities"":{""browser"":""" & browser & """}}")
     sessionId = getValueByKey(responseText, "sessionId")
     Debug.Print "sessionId: " & sessionId
+    Debug.Print "response: " & responseText
 End Function
 
 
 ' DRIVER STATUS
 Public Function Status() As Boolean
-    Dim st As String
     Status = False
     Call httpReq("GET", "http://localhost:9515/status")
     If responseStatus < "400" Then Status = True
 End Function
+
 
 ' GET
 Public Function GetUrl(ByRef url As String) As String
@@ -107,7 +108,6 @@ Public Function FindElement(ByRef by As String, ByRef value As String) As Seleni
     Set FindElement = Elem
     Debug.Print "found elementId: " & Elem.elementId
 End Function
-
 
 ' FIND BY XPATH
 Public Function FindElementByXpath(ByRef xpath As String) As SeleniumElement
@@ -127,6 +127,11 @@ End Function
 ' FIND BY CLASS NAME
 Public Function FindElementByClassName(ByRef className As String) As SeleniumElement
     Set FindElementByClassName = FindElement("class name", className)
+End Function
+
+' FIND BY TAG NAME
+Public Function FindElementByTagName(ByRef tagName As String) As SeleniumElement
+    Set FindElementByTagName = FindElement("tag name", tagName)
 End Function
 
 
@@ -159,11 +164,13 @@ Public Function PageSource() As String
 End Function
 
 
-'------ COMMON MEMBER ----------------------------------------------------------------------------
+'------ COMMON MEMBER (used also by SeleniumElement class) -------------------------------------------------
 
-'  Not real "PUBLIC" members but used also by SeleniumElement class
+' Set Function/Sub as Public, since they are used also by SeleniumElement class
 
+' HTTP request to WebDriver server. Checking command status.
 Public Function httpReq(method As String, url As String, Optional data As String = "") As String
+     Dim st As Variant
      'XHR may cause fatal error for not-found url etc.
      XHR.Open method, url, False
      XHR.SetRequestHeader "Content-Type", "application/json"
@@ -174,12 +181,28 @@ Public Function httpReq(method As String, url As String, Optional data As String
      
      'Debug.Print "resp " & responseText
      
-     If Len(httpReq) <> 3 Or httpReq >= "400" Then
-       Err.Raise 10999, "httpReq", "HTTP Error. Response Status = " & httpReq
+     'Invalid request. response body shall be text/plain.
+     If XHR.Status Like "4??" Then
+       Err.Raise 10000 + XHR.Status, "httpReq", "HTTP Respond Error (Status = " & XHR.Status & ") " & XHR.responseText & vbCrLf & url & vbCrLf & data
+     End If
+    
+     'get command status
+     st = getValueByKey(responseText, "status")
+
+     'Command fail
+     If IsNumeric(st) And st <> 0 Then
+       Err.Raise 10000 + st, "httpReq", "WebDriver command failed (Status = " & st & ") " & XHR.responseText & vbCrLf & url & vbCrLf & data
+     End If
+     
+     'Usually not reached here.  5xx status should be command fail
+     If XHR.Status Like "5??" Then
+       Err.Raise 10000 + XHR.Status, "httpReq", "HTTP Respond Error (Status = " & XHR.Status & ") " & XHR.responseText & vbCrLf & url & vbCrLf & data
      End If
 End Function
 
 
+' Json parser.
+'   - get value of name(key) at top level
 ' have to add a reference to "Microsoft Script Control 1.0".
 Public Function JsonGetValueByKey(jsonString As String, key As String) As String
     ' from https://stackoverflow.com/questions/6627652/parsing-json-in-excel-vba/7300926
@@ -194,20 +217,22 @@ Public Function JsonGetValueByKey(jsonString As String, key As String) As String
 End Function
 
 
-' string type("xxx") -> string
-' null -> Null
-' number type -> numeric (Long, Double, etc)
-' true -> Err
-' false -> Err
-Public Function getValueByKey(json As String, key As String) As Variant
-    Dim RE1 As Object, RE2 As Object
+' Poor Json parser
+'   - get value of name(key) at any level. if there are multiple entry of the name, it pick up the first one.
+'   - the found value must be null, number, simple string (not containing escaped double-quote)
+Public Function getValueByKey(json As String, key As String) As Variant 'TODO: correct handling of JSON syntax
+    Dim RE1 As Object, RE2 As Object, RE3 As Object
     Dim s As String
     Set RE1 = CreateObject("VBScript.RegExp")
     Set RE2 = CreateObject("VBScript.RegExp")
-    RE1.Pattern = ".*""" & key & """:([^""},]+)[""},].*"
-    RE2.Pattern = ".*""" & key & """:""([^""]*)"".*"
-    If RE1.test(json) Then
-      s = RE1.Replace(json, "$1")  'TODO: correct handling of JSON syntax
+    Set RE3 = CreateObject("VBScript.RegExp")
+    RE1.Pattern = ".*""" & key & """[ \t\r\n]*:[ \t\r\n]*([^""{\[, \t\r\n]+)[ \t\r\n]*[},].*"
+    RE2.Pattern = ".*""" & key & """[ \t\r\n]*:[ \t\r\n]*""([^""]*)"".*"
+    RE3.Pattern = """" & key & """[ \t\r\n]*:"
+    If Not RE3.test(json) Then '--- key not found
+      getValueByKey = "the key not found"
+    ElseIf RE1.test(json) Then '--- value is other than string("...), array([...), nor object({...)
+      s = RE1.Replace(json, "$1")
       If s = "null" Then
         getValueByKey = Null
       ElseIf IsNumeric(s) Then
@@ -215,18 +240,20 @@ Public Function getValueByKey(json As String, key As String) As Variant
       Else
         Err.Raise 10999, "getValueByKey", "illegal response value: " & json
       End If
-    ElseIf RE2.test(json) Then
+    ElseIf RE2.test(json) Then 'value is string
       getValueByKey = RE2.Replace(json, "$1")  'TODO: correct handling of JSON syntax
-    Else
-      Err.Raise 10999, "getValueByKey", "illegal response value: " & json
+    Else 'value is object or array
+      getValueByKey = json
     End If
 End Function
 
+
+' get element ids from JSON string like "value":["ELEMENT":"idxxxx","ELEMENT":"idxxxx","ELEMENT":"idxxxx"]
 Public Function getElementIds(json As String) As Variant
     Dim RE As Object
     Dim s As String, v As Variant
     Set RE = CreateObject("VBScript.RegExp")
-    RE.Pattern = ".*""value"":\[([^\]]*)\].*"
+    RE.Pattern = ".*""value""[ \t\r\n]*:[ \t\r\n]*\[[ \t\r\n]*([^\[ \t\r\n]*)[ \t\r\n]*\].*"
     s = RE.Replace(json, "$1")  'TODO: correct handling of JSON syntax
     s = Replace(s, """ELEMENT"":", "")
     s = Replace(s, """", "")
