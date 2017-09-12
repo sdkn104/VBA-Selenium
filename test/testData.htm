@@ -13,10 +13,10 @@
 
   <h3>Category 1</h3>
 
-  <form action="#">
+  <form action="#" onsubmit="document.getElementById('id_text').value=111; return false;">
               <input type="text" id="id_text" class="c_text" name="input" value="">
               <input type="submit" id="id_submit" class="c_submit" name="submit" value="Submit">
-              <input type="button" id="id_button" class="c_button" name="btn" value="OK">
+              <input type="button" id="id_button" class="c_button" name="btn" value="OK" onclick="document.getElementById('id_text').value=999">
   </form>
 
   <span id="id_span" class="c_span"><button class="c_button2" type="button">button2</button></span>
