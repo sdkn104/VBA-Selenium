@@ -67,8 +67,8 @@ Public Function FindElementByClassName(ByRef className As String) As SeleniumEle
 End Function
 
 ' FIND BY TAG NAME
-Public Function FindElementByTagName(ByRef tagName As String) As SeleniumElement
-    Set FindElementByTagName = FindElement("tag name", tagName)
+Public Function FindElementByTagName(ByRef TagName As String) As SeleniumElement
+    Set FindElementByTagName = FindElement("tag name", TagName)
 End Function
 
 
@@ -111,6 +111,11 @@ Public Function Click() As String
     Call Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/click")
 End Function
 
+' CLEAR
+Public Function Clear() As String
+    Call Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/clear")
+End Function
+
 
 ' ATTRIBUTE
 '  - return Null if the attributeName not found.
@@ -124,6 +129,12 @@ End Function
 Public Function Text() As String
     Call Driver.httpReq("GET", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/text")
     Text = Driver.JsonGetValueByKey(Driver.responseText, "value")
+End Function
+
+' TAG NAME
+Public Function TagName() As String
+    Call Driver.httpReq("GET", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/name")
+    TagName = Driver.getValueByKey(Driver.responseText, "value")
 End Function
 
 

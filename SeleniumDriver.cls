@@ -130,8 +130,8 @@ Public Function FindElementByClassName(ByRef className As String) As SeleniumEle
 End Function
 
 ' FIND BY TAG NAME
-Public Function FindElementByTagName(ByRef tagName As String) As SeleniumElement
-    Set FindElementByTagName = FindElement("tag name", tagName)
+Public Function FindElementByTagName(ByRef TagName As String) As SeleniumElement
+    Set FindElementByTagName = FindElement("tag name", TagName)
 End Function
 
 
