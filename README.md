@@ -7,9 +7,14 @@ Now, only limited number of [Selenium commands](https://github.com/SeleniumHQ/se
 ### Example
 
 ```vb
-Dim driver As New SeleniumLib
+Dim driver As New SeleniumDriver
+Dim e As SeleniumElement
+
 driver.Setup("C:\path\to\chromedriver.exe", "chrome")
 driver.GetUrl("http://www.example.com")
+Set e = driver.FindElementById("id1")
+e.Click
+Debug.Print e.Text
 ```
 ### API List
 
