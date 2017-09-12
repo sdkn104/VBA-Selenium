@@ -1,18 +1,58 @@
 # VBA-Selenium
 
-VBA Class for Selenium WebDriver
+VBA API for Selenium WebDriver
 
-now, only a few methods implemented.
+Now, only limited number of [Selenium commands](https://github.com/SeleniumHQ/selenium/wiki/JsonWireProtocol#command-reference) are implemented.
 
 ### Example
 
 ```vb
 Dim driver As New SeleniumLib
-driver.Setup("C:\......\chromedriver.exe")
+driver.Setup("C:\path\to\chromedriver.exe", "chrome")
 driver.GetUrl("http://www.example.com")
 ```
-see [SeleniumTest.bas](/SeleniumTest.bas)
+### API List
 
+Class SeleniumDriver
+
+```vb
+Public Function Setup(Optional ByRef driverPath As String = "", Optional browser As String = "chrome") As String
+Public Function Status() As Boolean
+Public Function GetUrl(ByRef url As String) As String
+Public Function FindElement(ByRef by As String, ByRef value As String) As SeleniumElement
+Public Function FindElementByXpath(ByRef xpath As String) As SeleniumElement
+Public Function FindElementByName(ByRef name As String) As SeleniumElement
+Public Function FindElementById(ByRef id As String) As SeleniumElement
+Public Function FindElementByClassName(ByRef className As String) As SeleniumElement
+Public Function FindElementByTagName(ByRef TagName As String) As SeleniumElement
+Public Function FindElements(ByRef by As String, ByRef value As String) As Variant
+Public Function PageSource() As String
+```
+
+Class SeleniumElement
+
+```vb
+Public Function FindElement(ByRef by As String, ByRef value As String) As SeleniumElement
+Public Function FindElementByXpath(ByRef xpath As String) As SeleniumElement
+Public Function FindElementById(ByRef id As String) As SeleniumElement
+Public Function FindElementByName(ByRef name As String) As SeleniumElement
+Public Function FindElementByClassName(ByRef className As String) As SeleniumElement
+Public Function FindElementByTagName(ByRef TagName As String) As SeleniumElement
+Public Function FindElements(ByRef by As String, ByRef value As String) As Variant
+Public Function SendKeys(ByRef keys As String) As String
+Public Function Submit() As String
+Public Function Click() As String
+Public Function Clear() As String
+Public Function GetAttribute(ByRef attributeName As String) As Variant
+Public Function Text() As String
+Public Function TagName() As String
+Public Function ToArray() As Variant
+```
+
+### Tested
+
+* Using [SeleniumTest.bas](/SeleniumTest.bas)
+* MS Excel 2000, Windows10, [Google Chrome Driver](http://www.seleniumhq.org/download/) 2.32, Google Chrome 61.0.3163.79
 
 ### Reference
 
@@ -27,3 +67,7 @@ see [SeleniumTest.bas](/SeleniumTest.bas)
 * Selenium Python
     * not official reference (http://selenium-python.readthedocs.io/index.html)
     * official reference (https://seleniumhq.github.io/selenium/docs/api/py/index.html)
+
+### License
+
+MIT License
