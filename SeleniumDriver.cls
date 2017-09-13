@@ -18,23 +18,24 @@ Option Explicit
 Public sessionId As String
 Public responseText As String
 Public responseStatus As String
+Public driverUrl As String
 
 ' Private Member
 Private XHR As Object
 Private WebDriverPath As String
 
-
 ' Constructor
 '  - Setup() should be called after construct
 Private Sub Class_Initialize()
     Set XHR = CreateObject("MSXML2.XMLHTTP")
+    driverUrl = "http://localhost:9515/"
 End Sub
 
 
 ' Destructor
 Private Sub Class_Terminate()
     'Delete session
-    Call httpReq("DELETE", "http://localhost:9515/session/" & sessionId)
+    Call httpReq("DELETE", driverUrl & "session/" & sessionId)
     
     'Kill driver
     Dim WSH As Object, FSO As Object
@@ -78,7 +79,7 @@ Public Function Setup(Optional ByRef driverPath As String = "", Optional browser
     End If
     
     'Get Selenium SessionId
-    Call httpReq("POST", "http://localhost:9515/session", "{""desiredCapabilities"":{""browser"":""" & browser & """}}")
+    Call httpReq("POST", driverUrl & "session", "{""desiredCapabilities"":{""browser"":""" & browser & """}}")
     sessionId = getValueByKey(responseText, "sessionId")
     Debug.Print "sessionId: " & sessionId
     Debug.Print "response: " & responseText
@@ -88,20 +89,20 @@ End Function
 ' DRIVER STATUS
 Public Function Status() As Boolean
     Status = False
-    Call httpReq("GET", "http://localhost:9515/status")
+    Call httpReq("GET", driverUrl & "status")
     If responseStatus < "400" Then Status = True
 End Function
 
 
 ' GET
 Public Function GetUrl(ByRef url As String) As String
-    GetUrl = httpReq("POST", "http://localhost:9515/session/" & sessionId & "/url", "{""url"":""" & url & """}")
+    GetUrl = httpReq("POST", driverUrl & "session/" & sessionId & "/url", "{""url"":""" & url & """}")
 End Function
 
 
 ' FIND ELEMENT
 Public Function FindElement(ByRef by As String, ByRef value As String) As SeleniumElement
-    Call httpReq("POST", "http://localhost:9515/session/" & sessionId & "/element", "{""using"":""" & by & """,""value"":""" & value & """}")
+    Call httpReq("POST", driverUrl & "session/" & sessionId & "/element", "{""using"":""" & by & """,""value"":""" & value & """}")
     Dim Elem As New SeleniumElement
     Elem.Setup Me
     Elem.elementId = getValueByKey(responseText, "ELEMENT")
@@ -116,17 +117,17 @@ End Function
 
 ' FIND BY NAME
 Public Function FindElementByName(ByRef name As String) As SeleniumElement
-    Set FindElementByName = FindElement("name", name)
+    Set FindElementByName = FindElement("xpath", "//*[@name='" & name & "']")
 End Function
 
 ' FIND BY ID
 Public Function FindElementById(ByRef id As String) As SeleniumElement
-    Set FindElementById = FindElement("id", id)
+    Set FindElementById = FindElement("xpath", "//*[@id='" & id & "']")
 End Function
 
 ' FIND BY CLASS NAME
 Public Function FindElementByClassName(ByRef className As String) As SeleniumElement
-    Set FindElementByClassName = FindElement("class name", className)
+    Set FindElementByClassName = FindElement("xpath", "//*[@class='" & className & "']")
 End Function
 
 ' FIND BY TAG NAME
@@ -139,7 +140,7 @@ End Function
 Public Function FindElements(ByRef by As String, ByRef value As String) As Variant
     Dim Elem As SeleniumElement
     Dim arr As Variant, i As Long, elems As Variant
-    Call httpReq("POST", "http://localhost:9515/session/" & sessionId & "/elements", "{""using"":""" & by & """,""value"":""" & value & """}")
+    Call httpReq("POST", driverUrl & "session/" & sessionId & "/elements", "{""using"":""" & by & """,""value"":""" & value & """}")
     elems = getElementIds(responseText)
     If UBound(elems) >= LBound(elems) Then
       ReDim arr(LBound(elems) To UBound(elems))
@@ -159,7 +160,7 @@ End Function
 
 ' PAGE SOURCE
 Public Function PageSource() As String
-    Call httpReq("GET", "http://localhost:9515/session/" & sessionId & "/source")
+    Call httpReq("GET", driverUrl & "session/" & sessionId & "/source")
     PageSource = JsonGetValueByKey(responseText, "value")
 End Function
 
@@ -179,7 +180,7 @@ Public Function httpReq(method As String, url As String, Optional data As String
      responseStatus = XHR.Status
      httpReq = XHR.Status
      
-     'Debug.Print "resp " & responseText
+     Debug.Print "resp " & responseText
      
      'Invalid request. response body shall be text/plain.
      If XHR.Status Like "4??" Then

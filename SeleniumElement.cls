@@ -38,7 +38,7 @@ End Sub
 ' FIND ELEMENT
 Public Function FindElement(ByRef by As String, ByRef value As String) As SeleniumElement
     Dim Elem As SeleniumElement
-    Call Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/element", "{""using"":""" & by & """,""value"":""" & value & """}")
+    Call Driver.httpReq("POST", Driver.driverUrl & "session/" & Driver.sessionId & "/element/" & elementId & "/element", "{""using"":""" & by & """,""value"":""" & value & """}")
     Set Elem = New SeleniumElement
     Elem.Setup Driver
     Elem.elementId = Driver.getValueByKey(Driver.responseText, "ELEMENT")
@@ -51,19 +51,19 @@ Public Function FindElementByXpath(ByRef xpath As String) As SeleniumElement
     Set FindElementByXpath = FindElement("xpath", xpath)
 End Function
 
-' FIND BY ID
-Public Function FindElementById(ByRef id As String) As SeleniumElement
-    Set FindElementById = FindElement("id", id)
-End Function
-
 ' FIND BY NAME
 Public Function FindElementByName(ByRef name As String) As SeleniumElement
-    Set FindElementByName = FindElement("name", name)
+    Set FindElementByName = FindElement("xpath", "//*[@name='" & name & "']")
+End Function
+
+' FIND BY ID
+Public Function FindElementById(ByRef id As String) As SeleniumElement
+    Set FindElementById = FindElement("xpath", "//*[@id='" & id & "']")
 End Function
 
 ' FIND BY CLASS NAME
 Public Function FindElementByClassName(ByRef className As String) As SeleniumElement
-    Set FindElementByClassName = FindElement("class name", className)
+    Set FindElementByClassName = FindElement("xpath", "//*[@class='" & className & "']")
 End Function
 
 ' FIND BY TAG NAME
@@ -72,11 +72,12 @@ Public Function FindElementByTagName(ByRef TagName As String) As SeleniumElement
 End Function
 
 
+
 ' FIND ELEMENTS
 Public Function FindElements(ByRef by As String, ByRef value As String) As Variant
     Dim Elem As SeleniumElement
     Dim arr As Variant, i As Long, elems As Variant
-    Call Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/elements", "{""using"":""" & by & """,""value"":""" & value & """}")
+    Call Driver.httpReq("POST", Driver.driverUrl & "session/" & Driver.sessionId & "/element/" & elementId & "/elements", "{""using"":""" & by & """,""value"":""" & value & """}")
     elems = Driver.getElementIds(Driver.responseText)
     If UBound(elems) >= LBound(elems) Then
       ReDim arr(LBound(elems) To UBound(elems))
@@ -98,42 +99,42 @@ End Function
 ' SEND KEYS
 '   TODO: how can we send control-char??
 Public Function SendKeys(ByRef keys As String) As String
-    Call Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/value", "{""value"":[""" & keys & """]}")
+    Call Driver.httpReq("POST", Driver.driverUrl & "session/" & Driver.sessionId & "/element/" & elementId & "/value", "{""value"":[""" & keys & """]}")
 End Function
 
 ' SUBMIT
 Public Function Submit() As String
-    Call Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/submit")
+    Call Driver.httpReq("POST", Driver.driverUrl & "session/" & Driver.sessionId & "/element/" & elementId & "/submit")
 End Function
 
 ' CLICK
 Public Function Click() As String
-    Call Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/click")
+    Call Driver.httpReq("POST", Driver.driverUrl & "session/" & Driver.sessionId & "/element/" & elementId & "/click")
 End Function
 
 ' CLEAR
 Public Function Clear() As String
-    Call Driver.httpReq("POST", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/clear")
+    Call Driver.httpReq("POST", Driver.driverUrl & "session/" & Driver.sessionId & "/element/" & elementId & "/clear")
 End Function
 
 
 ' ATTRIBUTE
 '  - return Null if the attributeName not found.
 Public Function GetAttribute(ByRef attributeName As String) As Variant
-    Call Driver.httpReq("GET", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/attribute/" & attributeName)
+    Call Driver.httpReq("GET", Driver.driverUrl & "session/" & Driver.sessionId & "/element/" & elementId & "/attribute/" & attributeName)
     GetAttribute = Driver.getValueByKey(Driver.responseText, "value")
     Debug.Print attributeName & " : " & GetAttribute
 End Function
 
 ' TEXT
 Public Function Text() As String
-    Call Driver.httpReq("GET", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/text")
+    Call Driver.httpReq("GET", Driver.driverUrl & "session/" & Driver.sessionId & "/element/" & elementId & "/text")
     Text = Driver.JsonGetValueByKey(Driver.responseText, "value")
 End Function
 
 ' TAG NAME
 Public Function TagName() As String
-    Call Driver.httpReq("GET", "http://localhost:9515/session/" & Driver.sessionId & "/element/" & elementId & "/name")
+    Call Driver.httpReq("GET", Driver.driverUrl & "session/" & Driver.sessionId & "/element/" & elementId & "/name")
     TagName = Driver.getValueByKey(Driver.responseText, "value")
 End Function
 
