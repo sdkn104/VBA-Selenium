@@ -2,7 +2,10 @@
 
 VBA API for Selenium WebDriver
 
-Now, only limited number of [Selenium commands](https://github.com/SeleniumHQ/selenium/wiki/JsonWireProtocol#command-reference) are implemented.
+* Now, only limited number of [Selenium commands](https://github.com/SeleniumHQ/selenium/wiki/JsonWireProtocol#command-reference) are implemented.
+* Supported drivers
+  * [Google Chrome Driver](http://www.seleniumhq.org/download/), which is based on [WebDriver Wire Protocol](https://github.com/SeleniumHQ/selenium/wiki/JsonWireProtocol). 
+  * Not supported Firefox driver, etc, which is based on latest varesion of the WebDriver protocol, [W3C WebDriver protocol](https://www.w3.org/TR/webdriver/)
 
 ### Example
 
