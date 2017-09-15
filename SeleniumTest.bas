@@ -3,14 +3,14 @@ Attribute VB_Name = "SeleniumTest"
 Sub test()
     Dim e As SeleniumElement
     
-If Null <> "xx" Then MsgBox 999
-If Not Null = "xx" Then MsgBox 999
-If Null = "xx" Then MsgBox 999
-    
+    If Null <> "xx" Then MsgBox 999
+    If Not Null = "xx" Then MsgBox 999
+    If Null = "xx" Then MsgBox 999
+        
     'Start Selenium
     Dim WebDriver As New SeleniumDriver
     WebDriver.Setup "C:\Users\sdkn1\Desktop\Selenium\chromedriver_win32\chromedriver.exe"
-    'WebDriver.Setup "", "firefox"
+    'WebDriver.Setup "C:\Users\sdkn1\Desktop\Selenium\geckodriver-v0.18.0-win64\geckodriver.exe", "firefox"
     Application.Wait Now + TimeValue("00:00:02")
     
     'Get HTML Page
@@ -49,16 +49,18 @@ If Null = "xx" Then MsgBox 999
     Next
     
     'Element: Find Elements
-    arr = WebDriver.FindElementByTagName("body").FindElements("tag name", "input")
+    arr = WebDriver.FindElementByTagName("body").FindElements("xpath", ".//input")
     If UBound(arr) - LBound(arr) + 1 <> 3 Then Err.Raise 20035
     For Each v In arr
       If Not v.GetAttribute("class") Like "c_*" Then Err.Raise 20036
     Next
-    arr = WebDriver.FindElementByTagName("body").FindElements("tag name", "xxxxx")
+    arr = WebDriver.FindElementByTagName("body").FindElements("xpath", ".//xxxxx")
     If UBound(arr) >= LBound(arr) Then Err.Raise 20037
 
     'Send keys, Clear
     WebDriver.FindElementById("id_text").SendKeys "abc"
+    Debug.Print WebDriver.FindElementById("id_text").GetAttribute("value")
+    Debug.Print WebDriver.PageSource
     If WebDriver.FindElementById("id_text").GetAttribute("value") <> "abc" Then Err.Raise 20041
     Set e = WebDriver.FindElementByTagName("form")
     e.FindElementById("id_text").SendKeys "def"
@@ -93,7 +95,7 @@ If Null = "xx" Then MsgBox 999
     'Error Case
     On Error GoTo OnError
     ExpErrNumber = 10007
-    Call WebDriver.FindElement("tag name", "xxxxxx")
+    Call WebDriver.FindElement("xpath", "//xxxxxx")
     ExpErrNumber = 10013
     Call WebDriver.FindElement("xxxx", "id_text")
     GoTo EndOnError

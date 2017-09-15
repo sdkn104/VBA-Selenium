@@ -19,6 +19,7 @@ Public sessionId As String
 Public responseText As String
 Public responseStatus As String
 Public driverUrl As String
+Public browserName As String
 
 ' Private Member
 Private XHR As Object
@@ -56,6 +57,12 @@ End Sub
 Public Function Setup(Optional ByRef driverPath As String = "", Optional browser As String = "chrome") As String
     Dim WSH As Object, FSO As Object
     Dim st As Boolean
+    
+    browserName = browser
+    
+    If browser = "firefox" Then
+      driverUrl = "http://localhost:4444/"
+    End If
     
     'Check WebDriver is running
     On Error Resume Next
@@ -102,10 +109,16 @@ End Function
 
 ' FIND ELEMENT
 Public Function FindElement(ByRef by As String, ByRef value As String) As SeleniumElement
+    Dim v As Variant
     Call httpReq("POST", driverUrl & "session/" & sessionId & "/element", "{""using"":""" & by & """,""value"":""" & value & """}")
     Dim Elem As New SeleniumElement
     Elem.Setup Me
-    Elem.elementId = getValueByKey(responseText, "ELEMENT")
+    v = getElementIds(responseText)
+    If UBound(v) = LBound(v) Then
+        Elem.elementId = v(LBound(v))
+    Else
+        Err.Raise 10000, "program error"
+    End If
     Set FindElement = Elem
     Debug.Print "found elementId: " & Elem.elementId
 End Function
@@ -132,7 +145,7 @@ End Function
 
 ' FIND BY TAG NAME
 Public Function FindElementByTagName(ByRef TagName As String) As SeleniumElement
-    Set FindElementByTagName = FindElement("tag name", TagName)
+    Set FindElementByTagName = FindElement("xpath", "//" & TagName)
 End Function
 
 
@@ -171,7 +184,7 @@ End Function
 
 ' HTTP request to WebDriver server. Checking command status.
 Public Function httpReq(method As String, url As String, Optional data As String = "") As String
-     Dim st As Variant
+     Dim st As Variant, vl As Variant
      'XHR may cause fatal error for not-found url etc.
      XHR.Open method, url, False
      XHR.SetRequestHeader "Content-Type", "application/json"
@@ -180,6 +193,8 @@ Public Function httpReq(method As String, url As String, Optional data As String
      responseStatus = XHR.Status
      httpReq = XHR.Status
      
+     Debug.Print "url " & url
+     Debug.Print "data " & data
      Debug.Print "resp " & responseText
      
      'Invalid request. response body shall be text/plain.
@@ -189,15 +204,24 @@ Public Function httpReq(method As String, url As String, Optional data As String
     
      'get command status
      st = getValueByKey(responseText, "status")
+     vl = getValueByKey(responseText, "value")
 
-     'Command fail
-     If IsNumeric(st) And st <> 0 Then
-       Err.Raise 10000 + st, "httpReq", "WebDriver command failed (Status = " & st & ") " & XHR.responseText & vbCrLf & url & vbCrLf & data
-     End If
-     
-     'Usually not reached here.  5xx status should be command fail
-     If XHR.Status Like "5??" Then
-       Err.Raise 10000 + XHR.Status, "httpReq", "HTTP Respond Error (Status = " & XHR.Status & ") " & XHR.responseText & vbCrLf & url & vbCrLf & data
+     'Command fail for old protocol
+     If st = "the key not found" Then 'W3C protocol
+       If XHR.Status Like "5??" Then
+         Err.Raise 10000 + XHR.Status, "httpReq", "HTTP Respond Error (Status = " & XHR.Status & ") " & XHR.responseText & vbCrLf & url & vbCrLf & data
+       End If
+       If vl = "the key not found" Then
+         Err.Raise 10000, "httpReq", "Unexpected error"
+       End If
+     Else 'older wire protocol
+       If Not IsNumeric(st) Or st <> 0 Then
+         Err.Raise 10000 + st, "httpReq", "WebDriver command failed (Status = " & st & ") " & XHR.responseText & vbCrLf & url & vbCrLf & data
+       End If
+       'can not reached here. (status 5xx should be command error)
+       If XHR.Status Like "5??" Then
+         Err.Raise 10000 + XHR.Status, "httpReq", "HTTP Respond Error (Status = " & XHR.Status & ") " & XHR.responseText & vbCrLf & url & vbCrLf & data
+       End If
      End If
 End Function
 
@@ -250,18 +274,33 @@ End Function
 
 
 ' get element ids from JSON string like "value":["ELEMENT":"idxxxx","ELEMENT":"idxxxx","ELEMENT":"idxxxx"]
+' get element ids from JSON string like "value":{"element-xxxx":"idxxxx"}
+' get element ids from JSON string like "value":[{"element-xxxx":"idxxxx"},{"element-xxx":"idxxxx",...}]
 Public Function getElementIds(json As String) As Variant
     Dim RE As Object
     Dim s As String, v As Variant
     Set RE = CreateObject("VBScript.RegExp")
-    RE.Pattern = ".*""value""[ \t\r\n]*:[ \t\r\n]*\[[ \t\r\n]*([^\[ \t\r\n]*)[ \t\r\n]*\].*"
-    s = RE.Replace(json, "$1")  'TODO: correct handling of JSON syntax
-    s = Replace(s, """ELEMENT"":", "")
+    RE.Global = True
+    RE.Pattern = ".*""value""[ \t\r\n]*:[ \t\r\n]*\[([^\]]*)\].*" '[]
+    If RE.test(json) Then ' old version protocol
+        s = RE.Replace(json, "$1")  'TODO: correct handling of JSON syntax
+    Else 'new W3C protocol
+        RE.Pattern = ".*""value""[ \t\r\n]*:[ \t\r\n]*{([^}]*)}.*" '{}
+        s = RE.Replace(json, "$1")  'TODO: correct handling of JSON syntax
+    End If
+    RE.Pattern = "[{}]"
+    s = RE.Replace(s, "")
+    RE.Pattern = "[ \t\r\n]*""(ELEMENT|element-6066-11e4-a52e-4f735466cecf)""[ \t\r\n]*:[ \t\r\n]*"
+    s = RE.Replace(s, "")
+    RE.Pattern = "[ \t\r\n]*,"
+    s = RE.Replace(s, ",")
+    RE.Pattern = "[ \t\r\n]*$"
+    s = RE.Replace(s, "")
     s = Replace(s, """", "")
-    s = Replace(s, "{", "")
-    s = Replace(s, "}", "")
+    
     v = Split(s, ",")
     getElementIds = v
 End Function
+
 
 

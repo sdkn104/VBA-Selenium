@@ -37,11 +37,16 @@ End Sub
 
 ' FIND ELEMENT
 Public Function FindElement(ByRef by As String, ByRef value As String) As SeleniumElement
-    Dim Elem As SeleniumElement
+    Dim Elem As SeleniumElement, v As Variant
     Call Driver.httpReq("POST", Driver.driverUrl & "session/" & Driver.sessionId & "/element/" & elementId & "/element", "{""using"":""" & by & """,""value"":""" & value & """}")
     Set Elem = New SeleniumElement
     Elem.Setup Driver
-    Elem.elementId = Driver.getValueByKey(Driver.responseText, "ELEMENT")
+    v = Driver.getElementIds(Driver.responseText)
+    If UBound(v) = LBound(v) Then
+        Elem.elementId = v(LBound(v))
+    Else
+        Err.Raise 10000, "program error"
+    End If
     Set FindElement = Elem
     Debug.Print "found elementId: " & Elem.elementId
 End Function
@@ -53,22 +58,22 @@ End Function
 
 ' FIND BY NAME
 Public Function FindElementByName(ByRef name As String) As SeleniumElement
-    Set FindElementByName = FindElement("xpath", "//*[@name='" & name & "']")
+    Set FindElementByName = FindElement("xpath", ".//*[@name='" & name & "']")
 End Function
 
 ' FIND BY ID
 Public Function FindElementById(ByRef id As String) As SeleniumElement
-    Set FindElementById = FindElement("xpath", "//*[@id='" & id & "']")
+    Set FindElementById = FindElement("xpath", ".//*[@id='" & id & "']")
 End Function
 
 ' FIND BY CLASS NAME
 Public Function FindElementByClassName(ByRef className As String) As SeleniumElement
-    Set FindElementByClassName = FindElement("xpath", "//*[@class='" & className & "']")
+    Set FindElementByClassName = FindElement("xpath", ".//*[@class='" & className & "']")
 End Function
 
 ' FIND BY TAG NAME
 Public Function FindElementByTagName(ByRef TagName As String) As SeleniumElement
-    Set FindElementByTagName = FindElement("tag name", TagName)
+    Set FindElementByTagName = FindElement("xpath", ".//" & TagName)
 End Function
 
 
@@ -99,7 +104,11 @@ End Function
 ' SEND KEYS
 '   TODO: how can we send control-char??
 Public Function SendKeys(ByRef keys As String) As String
-    Call Driver.httpReq("POST", Driver.driverUrl & "session/" & Driver.sessionId & "/element/" & elementId & "/value", "{""value"":[""" & keys & """]}")
+    If Driver.browserName = "chrome" Then
+      Call Driver.httpReq("POST", Driver.driverUrl & "session/" & Driver.sessionId & "/element/" & elementId & "/value", "{""value"":[""" & keys & """]}")
+    Else
+      Call Driver.httpReq("POST", Driver.driverUrl & "session/" & Driver.sessionId & "/element/" & elementId & "/value", "{""text"":""" & keys & """}")
+    End If
 End Function
 
 ' SUBMIT
@@ -146,7 +155,7 @@ Public Function ToArray() As Variant
     Dim rowCnt As Long, colCnt As Long
     Dim r As Long, c As Long, t As Long
     'Get rows
-    rows = FindElements("tag name", "tr")
+    rows = FindElements("xpath", ".//tr")
     If UBound(rows) < 0 Then Exit Function
     rowCnt = UBound(rows) - LBound(rows) + 1
     'Get column count (the max number of columns)
