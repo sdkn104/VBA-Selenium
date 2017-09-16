@@ -5,12 +5,14 @@ Sub test()
     
     If Null <> "xx" Then MsgBox 999
     If Not Null = "xx" Then MsgBox 999
-    If Null = "xx" Then MsgBox 999
         
     'Start Selenium
     Dim WebDriver As New SeleniumDriver
-    WebDriver.Setup "C:\Users\sdkn1\Desktop\Selenium\chromedriver_win32\chromedriver.exe"
+'    WebDriver.Setup "C:\Users\sdkn1\Desktop\Selenium\chromedriver_win32\chromedriver.exe"
+    WebDriver.Setup driverPath:="C:\Users\sdkn1\Desktop\Selenium\chromedriver_win32\chromedriver.exe", _
+          desiredCapabilitiesOption:="""chromeOptions"":{""args"":[""user-data-dir=C:/Users/sdkn1/Desktop/Selenium/chromeProfile""]}"
     'WebDriver.Setup "C:\Users\sdkn1\Desktop\Selenium\geckodriver-v0.18.0-win64\geckodriver.exe", "firefox"
+    
     Application.Wait Now + TimeValue("00:00:02")
     
     'Get HTML Page

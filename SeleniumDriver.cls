@@ -54,7 +54,7 @@ End Sub
 
 
 ' Start driver and create session
-Public Function Setup(Optional ByRef driverPath As String = "", Optional browser As String = "chrome") As String
+Public Function Setup(Optional ByRef driverPath As String = "", Optional browser As String = "chrome", Optional desiredCapabilitiesOption As String = "") As String
     Dim WSH As Object, FSO As Object
     Dim st As Boolean
     
@@ -86,7 +86,8 @@ Public Function Setup(Optional ByRef driverPath As String = "", Optional browser
     End If
     
     'Get Selenium SessionId
-    Call httpReq("POST", driverUrl & "session", "{""desiredCapabilities"":{""browser"":""" & browser & """}}")
+    If desiredCapabilitiesOption <> "" Then desiredCapabilitiesOption = "," & desiredCapabilitiesOption
+    Call httpReq("POST", driverUrl & "session", "{""desiredCapabilities"":{""browserName"":""" & browser & """" & desiredCapabilitiesOption & "}}")
     sessionId = getValueByKey(responseText, "sessionId")
     Debug.Print "sessionId: " & sessionId
     Debug.Print "response: " & responseText
